@@ -81,16 +81,17 @@ export function parse(inputStr) {
  * Function to parse one row of a CSV array and return an object
  */
 export function parseRow(inputStr, index) {
-  inputStr = inputStr.trim()
+  inputStr = inputStr.trim();
   let parsedOutput = [];
   let allTokens = inputStr.split(/\s(?![^\(]*\))/g);
   let tokensWithType = inputStr.match(new RegExp(/(\s|)(icon|link)\((.*?)\)(\s|)/gi));
 
   let hasType = tokensWithType !== null;    // Icon, Link etc. found
   let firstTime = true;                     // After first time, treat as text
+  let place = 0;
 
   for (let i = 0; i < allTokens.length; i++) {
-    if (hasType) {
+    if (hasType && tokensWithType?.length === 1) {
       if (firstTime) {
         parsedOutput.push(makeToken(allTokens[i], getType(allTokens[i]), index));
         firstTime = false;
@@ -99,6 +100,18 @@ export function parseRow(inputStr, index) {
         // i = 0: type; i = 1: text; i >= 2: more text (we need to add space)
         (i < 2) ? parsedOutput[0].text += `${allTokens[i]}` : parsedOutput[0].text += ` ${allTokens[i]}`;
       }
+    } else if (hasType && tokensWithType?.length > 1) {
+       if (tokensWithType.map(s => s.trim()).includes(allTokens[i])) {
+         parsedOutput.push(makeToken(allTokens[i], getType(allTokens[i]), i));
+         place = 0;
+       } else {
+         if (place === 0) {
+           parsedOutput.push(makeToken(allTokens[i], "text", i));
+           place = i;
+         } else {
+           parsedOutput[place].text += ` ${allTokens[i]}`;
+         }
+       }
     } else {
       if (firstTime) {
         parsedOutput.push(makeToken(allTokens[i], "text", index));
@@ -107,6 +120,11 @@ export function parseRow(inputStr, index) {
         parsedOutput[0].text += ` ${allTokens[i]}`;
       }
     }
+  }
+
+  if (parsedOutput?.length > 1) {
+    parsedOutput.map((element, index) => element.order = index);
+    return { order: index, type: 'compound', value: parsedOutput }
   }
 
   return parsedOutput;
@@ -143,6 +161,36 @@ function getFurtherArgs(inputStr) {
 }
 
 /**
+ * Function to normalize links by adding 'http://'
+ */
+function normalizeLink(inputStr) {
+  if (inputStr?.includes('http') ||
+      inputStr?.includes('tel:') ||
+      inputStr?.includes('mailto:') ||
+      inputStr == undefined) {
+    return inputStr;
+  }
+  else {
+    return `http://${inputStr}`;
+  }
+}
+
+/**
+ * Function to normalize color tokens and turn them into hex values
+ */
+function normalizeIcon(inputStr) {
+  let acceptableColour = /^#?[0-9|a-f|A-F]{6}$/;
+
+  if (acceptableColour.test(inputStr) && inputStr?.includes('#')) {
+    return inputStr;
+  } else if (acceptableColour.test(inputStr) && !inputStr?.includes('#')) {
+    return `#${inputStr}`;
+  } else {
+    return undefined;
+  }
+}
+
+/**
  * Function to build the token object
  */
 function makeToken(inputStr, type, order) {
@@ -153,19 +201,18 @@ function makeToken(inputStr, type, order) {
       token = {
         order: order,
         type: type,
-        iconName: getFirstArg(inputStr),
-        color: getFurtherArgs(inputStr)?.[0],
-        // colorToken: getFurtherArgs(inputStr)?.[0],
-        colorToken: undefined,
+        iconName: getFirstArg(inputStr).trim(),
+        color: normalizeIcon(getFurtherArgs(inputStr)?.[0])?.trim(),
+        colorToken: getFurtherArgs(inputStr)?.[0]?.trim() === "" ? undefined: getFurtherArgs(inputStr)?.[0]?.trim(),
         text: "",
       };
       break;
     case "link":
-      token ={
+      token = {
         order: order,
         type: type,
-        text: getFirstArg(inputStr),
-        href: getFurtherArgs(inputStr)?.[0],
+        text: getFirstArg(inputStr).trim(),
+        href: normalizeLink(getFurtherArgs(inputStr)?.[0])?.trim(),
       };
       break;
     case "text":

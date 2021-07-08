@@ -82,19 +82,28 @@ export function parse(inputStr) {
  */
 export function parseRow(inputStr, index) {
   inputStr = inputStr.trim();
-  let parsedOutput = [];
+
+  // Regex patterns for tokens, and tokens that have specific type (Icon, Link etc.)
   let allTokens = inputStr.split(/\s(?![^\(]*\))/g);
   let tokensWithType = inputStr.match(new RegExp(/(\s|)(icon|link)\((.*?)\)(\s|)/gi));
 
-  let hasType = tokensWithType !== null;    // Icon, Link etc. found
-  let firstTime = true;                     // After first time, treat as text
-  let place = 0;
+  let parsedOutput = [];                    // The return value that we will build
+  let hasType = tokensWithType !== null;    // Icon, Link etc. found; not free text
+  let createNewToken = true;                // Switch between creating new token or adding to a token
+  let semaphore = false;                    // Switch between creating/adding with compound types, E.g. Text --> Link --> Icon --> Text
+  let tokenCounter = 0;                     // Incremented with each call to makeToken()
 
+  /**
+   * This algorithm deals with three broad use-cases:
+   *   1. Single token-with-type found; anything else is added as "text" at the end
+   *   2. Multiple tokens-with-type found; could include mix of tokens-with-type and free text
+   *   3. Free text only
+   */
   for (let i = 0; i < allTokens.length; i++) {
     if (hasType && tokensWithType?.length === 1) {
-      if (firstTime) {
+      if (createNewToken) {
         parsedOutput.push(makeToken(allTokens[i], getType(allTokens[i]), index));
-        firstTime = false;
+        createNewToken = false;
       }
       else {
         // i = 0: type; i = 1: text; i >= 2: more text (we need to add space)
@@ -103,30 +112,35 @@ export function parseRow(inputStr, index) {
     } else if (hasType && tokensWithType?.length > 1) {
        if (tokensWithType.map(s => s.trim()).includes(allTokens[i])) {
          parsedOutput.push(makeToken(allTokens[i], getType(allTokens[i]), i));
-         place = 0;
+         tokenCounter += 1;
+         semaphore = true;
        } else {
-         if (place === 0) {
+         // Is this the _start_ of a chain of free text tokens?
+         if (tokenCounter === 0 || semaphore === true) {
            parsedOutput.push(makeToken(allTokens[i], "text", i));
-           place = i;
+           tokenCounter += 1;
+           semaphore = false;
          } else {
-           parsedOutput[place].text += ` ${allTokens[i]}`;
+           parsedOutput[tokenCounter-1].text += ` ${allTokens[i]}`;
          }
        }
     } else {
-      if (firstTime) {
+      if (createNewToken) {
         parsedOutput.push(makeToken(allTokens[i], "text", index));
-        firstTime = false;
+        createNewToken = false;
       } else {
         parsedOutput[0].text += ` ${allTokens[i]}`;
       }
     }
   }
 
+  // Special return value for use case 2.
   if (parsedOutput?.length > 1) {
     parsedOutput.map((element, index) => element.order = index);
     return { order: index, type: 'compound', value: parsedOutput }
   }
 
+  // Return value for use case 1. and 3.
   return parsedOutput;
 }
 

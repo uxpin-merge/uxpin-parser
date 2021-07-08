@@ -32,6 +32,8 @@ const choiceGroupData =
 
 const compoundToken = "link(Tahlia|http://www.paypal.com) ran a new system test. icon(Home|orange)";
 
+
+
 /**
  * Tests
  * UXPinParser.split()
@@ -116,6 +118,8 @@ test('Split: CSV strings should be converted to an array of arrays', () => {
     [ 'link(Tahlia|http://www.paypal.com) ran a new system test. icon(Home|orange)' ],
   ]);
 });
+
+
 
 /**
  * Tests
@@ -331,7 +335,6 @@ test('Parser: Compound Token', () => {
 
 
 
-
 /**
  * Data Tests
  */
@@ -339,39 +342,49 @@ test('Parser: Compound Token', () => {
 //This is an example of what could be in a single Text control, or in an ActivityItem's Description prop.
 //Also, equivalent to a single cell (or block) of a DataTable.
 const blockTest1 = `Tahlia ran a new system test. link(More Info|http://www.uxpin.com) icon(Info|themePrimary) And it passed!`;
-// console.log(UXPinParser.parse(blockTest1));
-// const blockTest1ResultsAlt1 = [{
-//    order: 0,
-//    type: keyRow,
-//    blocks: [
-//       {
-//          order: 0,
-//          type: keyBlock,
-//          tokens: [
-//             { order: 0, type: keyText, text: 'Tahlia ran a new system test.', },
-//             { order: 1, type: keyLink, text: "More Info", href: 'http://www.uxpin.com', },
-//             { order: 2, type: keyIcon, iconName: 'Info', color: '#0078d4', colorToken: 'themePrimary', },
-//             { order: 3, type: keyText, text: 'And it passed!', },],
-//       }
-//    ],
-// },];
-//
-// //This is a potentially valid alternative way to deliver the results.
-// //Just a simple list of tokens.
-// const blockTest1ResultsAlt2 = [
-//    { order: 0, type: keyText, text: 'Tahlia ran a new system test.', },
-//    { order: 1, type: keyLink, text: "More Info", href: 'http://www.uxpin.com', },
-//    { order: 2, type: keyIcon, iconName: 'Info', color: '#0078d4', colorToken: 'themePrimary', },
-//    { order: 3, type: keyText, text: 'And it passed!', },
-// ];
 
+test('Data Test: Compound Token Starting and Ending with Text', () => {
+  expect(UXPinParser.parse(blockTest1)).toStrictEqual([
+    {
+      order: 0,
+      type: 'compound',
+      value: [
+        {
+          order: 0,
+          type: 'text',
+          text: 'Tahlia ran a new system test.',
+        },
+        {
+          order: 1,
+          type: 'link',
+          text: "More Info",
+          href: 'http://www.uxpin.com',
+        },
+        {
+          order: 2,
+          type: 'icon',
+          iconName: 'Info',
+          // color: '#0078d4' //using UxpColors.getHexFromHexOrToken(),
+          color: undefined,
+          colorToken: 'themePrimary',
+          text: '',
+        },
+        {
+          order: 3,
+          type: 'text',
+          text: 'And it passed!',
+        },
+      ]
+    }
+  ]);
+});
 
 //For Nav without icons.
 const navTest1 = `Home
 Products
 About Us`;
 
-test('Parser: navTest1', () => {
+test('Data Test: navTest1', () => {
   expect(UXPinParser.parse(navTest1)).toStrictEqual([
     {
       order: 0,
@@ -396,7 +409,7 @@ const navTest2 = `icon(Home) Home
 icon(ProductVariant) Products
 icon(Info) About Us`;
 
-test('Parser: navTest2', () => {
+test('Data Test: navTest2', () => {
   expect(UXPinParser.parse(navTest2)).toStrictEqual([
     {
       order: 0,
@@ -428,7 +441,7 @@ test('Parser: navTest2', () => {
 //With fully qualified HREF
 const linkTest1 = 'link(Visit UXPin|http://www.uxpin.com)';
 
-test('Parser: linkTest1', () => {
+test('Data Test: linkTest1', () => {
   expect(UXPinParser.parse(linkTest1)).toStrictEqual([
     {
       order: 0,
@@ -442,7 +455,7 @@ test('Parser: linkTest1', () => {
 //With HREF lacking http part. Also, testing trimming.
 const linkTest2 = 'link( Visit UXPin | www.uxpin.com )';
 
-test('Parser: linkTest2', () => {
+test('Data Test: linkTest2', () => {
   expect(UXPinParser.parse(linkTest2)).toStrictEqual([
     {
       order: 0,
@@ -456,7 +469,7 @@ test('Parser: linkTest2', () => {
 //No HREF
 const linkTest3 = 'link(Visit UXPin)';
 
-test('Parser: linkTest3', () => {
+test('Data Test: linkTest3', () => {
   expect(UXPinParser.parse(linkTest3)).toStrictEqual([
     {
       order: 0,
@@ -470,7 +483,7 @@ test('Parser: linkTest3', () => {
 //With HREF - mailto
 const linkTest4 = 'link(Contact Us|mailto:support@uxpin.com)';
 
-test('Parser: linkTest4', () => {
+test('Data Test: linkTest4', () => {
   expect(UXPinParser.parse(linkTest4)).toStrictEqual([
     {
       order: 0,
@@ -484,7 +497,7 @@ test('Parser: linkTest4', () => {
 //with Fluent token
 const iconTest1 = 'icon(Globe|themePrimary)';
 
-test('Parser: iconTest1', () => {
+test('Data Test: iconTest1', () => {
   expect(UXPinParser.parse(iconTest1)).toStrictEqual([
     {
       order: 0,
@@ -501,7 +514,7 @@ test('Parser: iconTest1', () => {
 //with hex with hash mark
 const iconTest2 = 'icon(Globe|#0078d4)';
 
-test('Parser: iconTest2', () => {
+test('Data Test: iconTest2', () => {
   expect(UXPinParser.parse(iconTest2)).toStrictEqual([
     {
       order: 0,
@@ -517,7 +530,7 @@ test('Parser: iconTest2', () => {
 //with hex with no hash mark.
 const iconTest3 = 'icon(Globe|0078d4)';
 
-test('Parser: iconTest3', () => {
+test('Data Test: iconTest3', () => {
   expect(UXPinParser.parse(iconTest3)).toStrictEqual([
     {
       order: 0,
@@ -533,7 +546,7 @@ test('Parser: iconTest3', () => {
 //No color
 const iconTest4 = 'icon(Globe)';
 
-test('Parser: iconTest4', () => {
+test('Data Test: iconTest4', () => {
   expect(UXPinParser.parse(iconTest4)).toStrictEqual([
     {
       order: 0,
@@ -549,7 +562,7 @@ test('Parser: iconTest4', () => {
 //With the pipe delimiter, but no color spec
 const iconTest5 = 'icon(Globe|)';
 
-test('Parser: iconTest5', () => {
+test('Data Test: iconTest5', () => {
   expect(UXPinParser.parse(iconTest5)).toStrictEqual([
     {
       order: 0,
@@ -565,7 +578,7 @@ test('Parser: iconTest5', () => {
 //Testing Trimming
 const iconTest6 = 'icon( Globe | #0078d4 )';
 
-test('Parser: iconTest6', () => {
+test('Data Test: iconTest6', () => {
   expect(UXPinParser.parse(iconTest6)).toStrictEqual([
     {
       order: 0,
@@ -581,7 +594,7 @@ test('Parser: iconTest6', () => {
 //Plain text
 const textTest1 = 'Apples and Grapes';
 
-test('Parser: textTest1', () => {
+test('Data Test: textTest1', () => {
   expect(UXPinParser.parse(textTest1)).toStrictEqual([
     {
       order: 0,
@@ -595,7 +608,7 @@ test('Parser: textTest1', () => {
 //Plain text. Testing the trimming
 const textTest2 = '  Apples and Grapes  ';
 
-test('Parser: textTest2', () => {
+test('Data Test: textTest2', () => {
   expect(UXPinParser.parse(textTest2)).toStrictEqual([
     {
       order: 0,
@@ -608,7 +621,7 @@ test('Parser: textTest2', () => {
 //CSV-parseed text escaped because it has a comma in it
 const textTest3 = `"I love you, Grapes!"`;
 
-test('Parser: textTest3', () => {
+test('Data Test: textTest3', () => {
   expect(UXPinParser.parse(textTest3)).toStrictEqual([
     {
       order: 0,
@@ -621,7 +634,7 @@ test('Parser: textTest3', () => {
 //CSV-parsed text with comma in it, no escaping
 const textTest4 = 'I love you, Grapes!';
 
-test('Parser: textTest4', () => {
+test('Data Test: textTest4', () => {
   expect(UXPinParser.parse(textTest4)).toStrictEqual([
     {
       order: 0,

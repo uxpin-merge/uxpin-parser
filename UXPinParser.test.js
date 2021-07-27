@@ -648,3 +648,116 @@ test('Data Test: textTest4', () => {
     }
   ]);
 });
+
+// When there is a single token (like an Icon), trailing text is added to that
+// token's text field: {icon}
+const iconWithText = "icon(Home|themePrimary) The quick brown fox jumped over the lazy dog. "
+
+test('Data Test: iconWithText', () => {
+  expect(UXPinParser.parse(iconWithText)).toStrictEqual([
+    {
+      order: 0,
+      type: 'icon',
+      iconName: 'Home',
+      colorToken: 'themePrimary',
+      color: undefined,
+      text: 'The quick brown fox jumped over the lazy dog.'
+    },
+  ]);
+});
+
+// If text comes before a single token string, then it gets put in it's own
+// object, and we get a compound: {{text}, {icon}}
+const textThenToken = "The quick brown fox jumped over the lazy dog. icon(Home|themePrimary) "
+
+test('Data Test: textThenToken', () => {
+  expect(UXPinParser.parse(textThenToken)).toStrictEqual([
+    {
+      order: 0,
+      type: 'compound',
+      value: [
+        {
+          order: 0,
+          type: 'text',
+          text: 'The quick brown fox jumped over the lazy dog.'
+        },
+        {
+          order: 1,
+          type: 'icon',
+          iconName: 'Home',
+          colorToken: 'themePrimary',
+          color: undefined,
+          text: ''
+        },
+      ]
+    }
+  ]);
+});
+
+// When there are multiple tokens and text, they get put in a compound:
+// {{icon},{text},{link}}
+const tokenTextToken = "icon(Home|themePrimary) The quick brown fox jumped over the lazy dog. link(Learn More | www.uxpin.com)"
+
+test('Data Test: tokenTextToken', () => {
+  expect(UXPinParser.parse(tokenTextToken)).toStrictEqual([
+    {
+      order: 0,
+      type: 'compound',
+      value: [
+        {
+          order: 0,
+          type: 'icon',
+          iconName: 'Home',
+          colorToken: 'themePrimary',
+          color: undefined,
+          text: ''
+        },
+        {
+          order: 1,
+          type: 'text',
+          text: 'The quick brown fox jumped over the lazy dog.'
+        },
+        {
+          order: 2,
+          type: 'link',
+          text: 'Learn More',
+          href: 'http://www.uxpin.com'
+        },
+      ]
+    }
+  ]);
+});
+
+// Text at the beginning followed by tokens, gets parsed as a compound:
+// {{text},{icon},{link}}
+const textTokenToken = "The quick brown fox jumped over the lazy dog. icon(Home|themePrimary) link(Learn More | www.uxpin.com)"
+
+test('Data Test: textTokenToken', () => {
+  expect(UXPinParser.parse(textTokenToken)).toStrictEqual([
+    {
+      order: 0,
+      type: 'compound',
+      value: [
+        {
+          order: 0,
+          type: 'text',
+          text: 'The quick brown fox jumped over the lazy dog.'
+        },
+        {
+          order: 1,
+          type: 'icon',
+          iconName: 'Home',
+          colorToken: 'themePrimary',
+          color: undefined,
+          text: ''
+        },
+        {
+          order: 2,
+          type: 'link',
+          text: 'Learn More',
+          href: 'http://www.uxpin.com'
+        },
+      ]
+    }
+  ]);
+});

@@ -95,12 +95,14 @@ export function parseRow(inputStr, index) {
 
   /**
    * This algorithm deals with three broad use-cases:
-   *   1. Single token-with-type found; anything else is added as "text" at the end
-   *   2. Multiple tokens-with-type found; could include mix of tokens-with-type and free text
+   *   1. Single token-with-type found:
+   *     a. If token is at the start, then anything else is added as "text" at the end
+   *     b. Otherwise, fall through to 2. and treat as a compound type
+   *   2. Multiple tokens-with-type found (or a single token with text at the start); could include mix of tokens-with-type and free text
    *   3. Free text only
    */
   for (let i = 0; i < allTokens.length; i++) {
-    if (hasType && tokensWithType?.length === 1) {
+    if (hasType && tokensWithType?.length === 1 && (allTokens[0].trim() === tokensWithType[0]?.trim())) {
       if (createNewToken) {
         parsedOutput.push(makeToken(allTokens[i], getType(allTokens[i]), index));
         createNewToken = false;
@@ -109,7 +111,7 @@ export function parseRow(inputStr, index) {
         // i = 0: type; i = 1: text; i >= 2: more text (we need to add space)
         (i < 2) ? parsedOutput[0].text += `${allTokens[i]}` : parsedOutput[0].text += ` ${allTokens[i]}`;
       }
-    } else if (hasType && tokensWithType?.length > 1) {
+    } else if (hasType && tokensWithType?.length >= 1) {
        if (tokensWithType.map(s => s.trim()).includes(allTokens[i])) {
          parsedOutput.push(makeToken(allTokens[i], getType(allTokens[i]), i));
          tokenCounter += 1;

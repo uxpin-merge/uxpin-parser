@@ -761,3 +761,16 @@ test('Data Test: textTokenToken', () => {
     }
   ]);
 });
+
+const linkThenText = "link(Tahlia) ran a new system test";
+
+test('Data Test: linkThenTexT', () => {
+  expect(UXPinParser.parse(linkThenText)).toStrictEqual([
+    {
+      order: 0,
+      type: 'link',
+      text: 'Tahlia ran a new system test',
+      href: undefined,
+    },
+  ]);
+});
